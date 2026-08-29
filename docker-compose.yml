@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: hrsaas
+      POSTGRES_USER: hrsaas
+      POSTGRES_PASSWORD: hrsaas
+    ports:
+      - "5432:5432"
+    volumes:
+      - hrsaas-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hrsaas -d hrsaas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3 local para people.infrastructure.storage.S3DocumentStorageGateway
+  # (subida de documentos de empleado). No hace falta para que la app
+  # arranque ni para nomina/RRHH en general - solo para ese flujo concreto.
+  # Version fijada a 3.8: 3.x recientes exigen LOCALSTACK_AUTH_TOKEN de pago
+  # incluso para S3 basico (verificado en esta sesion con `docker run`/`docker logs`).
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+      HRSAAS_S3_BUCKET: ${HRSAAS_STORAGE_S3_BUCKET:-hrsaas-documents}
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./docker/localstack-init:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      # No "service_healthy": el arranque de la app no depende de S3 (los
+      # valores de hrsaas.storage.s3.* ya tienen default en
+      # application.properties), solo debe empezar despues de que el
+      # contenedor exista para que el healthcheck de arriba tenga tiempo.
+      localstack:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hrsaas
+      SPRING_DATASOURCE_USERNAME: hrsaas
+      SPRING_DATASOURCE_PASSWORD: hrsaas
+      # AD-08: sin estas dos, EncryptedStringConverter/HmacBlindIndexService
+      # rompen el arranque del contexto. Vienen de .env (gitignored) - ver
+      # .env.example. NUNCA usar estos valores de ejemplo en produccion.
+      HRSAAS_CRYPTO_DATA_KEY: ${HRSAAS_CRYPTO_DATA_KEY}
+      HRSAAS_CRYPTO_HMAC_KEY: ${HRSAAS_CRYPTO_HMAC_KEY}
+      HRSAAS_STORAGE_S3_BUCKET: ${HRSAAS_STORAGE_S3_BUCKET:-hrsaas-documents}
+      HRSAAS_STORAGE_S3_REGION: us-east-1
+      HRSAAS_STORAGE_S3_ENDPOINT: http://localstack:4566
+      HRSAAS_STORAGE_S3_ACCESS_KEY: test
+      HRSAAS_STORAGE_S3_SECRET_KEY: test
+      HRSAAS_STORAGE_S3_PATH_STYLE_ACCESS: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  hrsaas-db-data:

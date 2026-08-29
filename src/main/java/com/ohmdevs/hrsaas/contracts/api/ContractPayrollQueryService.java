@@ -50,6 +50,6 @@ public class ContractPayrollQueryService {
         }
         return new ActiveContractSummary(
                 contract.getId(), contract.getEmployeeId(), contract.getCompanyId(),
-                contract.getPositionId(), openSalary.getAmount(), openSalary.getCurrency());
+                openSalary.getAmount(), openSalary.getCurrency());
     }
 }

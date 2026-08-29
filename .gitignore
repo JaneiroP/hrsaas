@@ -34,3 +34,6 @@ build/
 
 ### jqwik (property-based testing) ###
 .jqwik-database
+
+### Docker Compose local env (claves de desarrollo, nunca commitear) ###
+.env

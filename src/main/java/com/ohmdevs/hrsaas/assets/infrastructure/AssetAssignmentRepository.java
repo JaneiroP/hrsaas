@@ -8,10 +8,6 @@ import java.util.List;
 
 public interface AssetAssignmentRepository extends JpaRepository<AssetAssignment, Long> {
 
-    List<AssetAssignment> findByEmployeeId(Long employeeId);
-
     /** Checklist de devolución: equipos que un empleado todavía tiene asignados. */
     List<AssetAssignment> findByEmployeeIdAndStatus(Long employeeId, AssetAssignmentStatus status);
-
-    List<AssetAssignment> findByAssetId(Long assetId);
 }

@@ -8,6 +8,4 @@ import java.util.List;
 public interface AccrualRepository extends JpaRepository<Accrual, Long> {
 
     List<Accrual> findByPayrollRunId(Long payrollRunId);
-
-    List<Accrual> findByEmployeeId(Long employeeId);
 }

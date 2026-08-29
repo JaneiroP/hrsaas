@@ -10,6 +10,8 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     List<BankAccount> findByEmployeeId(Long employeeId);
 
+    Optional<BankAccount> findByEmployeeIdAndPrimaryTrueAndActiveTrue(Long employeeId);
+
     /** Búsqueda por índice ciego, nunca por el número en claro (ver {@code BankAccount.accountNumberHmac}). */
     Optional<BankAccount> findByAccountNumberHmac(String accountNumberHmac);
 }

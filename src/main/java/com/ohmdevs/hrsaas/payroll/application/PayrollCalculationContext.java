@@ -4,7 +4,6 @@ import com.ohmdevs.hrsaas.contracts.api.ActiveContractSummary;
 import com.ohmdevs.hrsaas.time.api.AttendanceSummary;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * Estado en curso del cálculo de un volante, pasado a cada
@@ -23,19 +22,14 @@ public class PayrollCalculationContext {
 
     private final ActiveContractSummary contract;
     private final AttendanceSummary attendance;
-    private final LocalDate periodStart;
-    private final LocalDate periodEnd;
 
     private BigDecimal totalEarnings = BigDecimal.ZERO;
     private BigDecimal taxableEarnings = BigDecimal.ZERO;
     private BigDecimal tssEmployeeDeductions = BigDecimal.ZERO;
 
-    public PayrollCalculationContext(ActiveContractSummary contract, AttendanceSummary attendance,
-                                      LocalDate periodStart, LocalDate periodEnd) {
+    public PayrollCalculationContext(ActiveContractSummary contract, AttendanceSummary attendance) {
         this.contract = contract;
         this.attendance = attendance;
-        this.periodStart = periodStart;
-        this.periodEnd = periodEnd;
     }
 
     public ActiveContractSummary contract() {
@@ -44,14 +38,6 @@ public class PayrollCalculationContext {
 
     public AttendanceSummary attendance() {
         return attendance;
-    }
-
-    public LocalDate periodStart() {
-        return periodStart;
-    }
-
-    public LocalDate periodEnd() {
-        return periodEnd;
     }
 
     /** Registra un devengo ya calculado — antes de que el siguiente paso de la tubería pueda leerlo vía {@link #base(String)}. */

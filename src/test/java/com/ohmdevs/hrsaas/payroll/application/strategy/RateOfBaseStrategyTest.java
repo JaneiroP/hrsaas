@@ -82,9 +82,8 @@ class RateOfBaseStrategyTest {
 
     private PayrollCalculationContext contextWithGross(String gross) {
         PayrollCalculationContext context = new PayrollCalculationContext(
-                new ActiveContractSummary(1L, 1L, 1L, 1L, new BigDecimal(gross), "DOP"),
-                new AttendanceSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
-                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31));
+                new ActiveContractSummary(1L, 1L, 1L, new BigDecimal(gross), "DOP"),
+                new AttendanceSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         context.recordEarning(new BigDecimal(gross), true);
         return context;
     }

@@ -145,6 +145,14 @@
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 		</dependency>
+		<!-- dataio: lector CSV del motor de importacion (blueprint S07). No
+		     gestionada por el BOM de Boot, version fijada y verificada en vivo
+		     con mvn dependency:get. -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>1.14.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

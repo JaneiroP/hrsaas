@@ -16,6 +16,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -49,8 +51,16 @@ public class BankAccount extends TenantAwareEntity {
     @Column(name = "account_number", nullable = false, length = 255)
     private String accountNumber;
 
-    /** Índice ciego HMAC-SHA256 de {@link #accountNumber}, calculado por la capa de aplicación. */
-    @Column(name = "account_number_hmac", nullable = false, length = 64, updatable = false)
+    /**
+     * Índice ciego HMAC-SHA256 de {@link #accountNumber}, calculado por la
+     * capa de aplicación — mismo motivo que {@code Employee.documentNumberHmac}
+     * para {@code @JdbcTypeCode(SqlTypes.CHAR)}: la columna es {@code CHAR(64)}
+     * a propósito, y sin el código de tipo explícito (no basta con
+     * {@code columnDefinition}, que solo afecta el DDL generado) Hibernate
+     * espera {@code VARCHAR} y la validación de esquema falla contra Postgres real.
+     */
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "account_number_hmac", nullable = false, updatable = false, columnDefinition = "CHAR(64)")
     private String accountNumberHmac;
 
     @Column(name = "is_primary", nullable = false)

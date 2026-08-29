@@ -56,10 +56,4 @@ public class WorkSchedule extends TenantAwareEntity {
 
     @Column(nullable = false)
     private boolean active = true;
-
-    /** Suma de las siete columnas de arriba; no se persiste, se calcula al vuelo. */
-    public BigDecimal weeklyHours() {
-        return mondayHours.add(tuesdayHours).add(wednesdayHours).add(thursdayHours)
-                .add(fridayHours).add(saturdayHours).add(sundayHours);
-    }
 }

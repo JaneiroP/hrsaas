@@ -8,6 +8,4 @@ import java.util.List;
 public interface PayslipRepository extends JpaRepository<Payslip, Long> {
 
     List<Payslip> findByPayrollRunId(Long payrollRunId);
-
-    List<Payslip> findByEmployeeId(Long employeeId);
 }

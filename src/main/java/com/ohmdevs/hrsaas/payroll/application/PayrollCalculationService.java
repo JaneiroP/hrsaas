@@ -74,7 +74,7 @@ public class PayrollCalculationService {
                 contract.employeeId(), contract.companyId(), periodStart, periodEnd);
         PayrollDeductionSummary deductionSummary = payrollDeductionSummaryService.summarize(
                 contract.employeeId(), periodStart, periodEnd);
-        PayrollCalculationContext context = new PayrollCalculationContext(contract, attendance, periodStart, periodEnd);
+        PayrollCalculationContext context = new PayrollCalculationContext(contract, attendance);
         List<PayrollConcept> activeConcepts = payrollConceptRepository.findByActiveTrueOrderByExecutionOrderAsc();
 
         Payslip payslip = new Payslip();

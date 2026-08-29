@@ -7,7 +7,6 @@ public record ActiveContractSummary(
         Long contractId,
         Long employeeId,
         Long companyId,
-        Long positionId,
         BigDecimal currentSalary,
         String currency) {
 }

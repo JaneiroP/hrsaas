@@ -68,9 +68,8 @@ class BracketTableStrategyTest {
 
     private PayrollCalculationContext contextWithTaxableBase(String taxableGross) {
         PayrollCalculationContext context = new PayrollCalculationContext(
-                new ActiveContractSummary(1L, 1L, 1L, 1L, new BigDecimal(taxableGross), "DOP"),
-                new AttendanceSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
-                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31));
+                new ActiveContractSummary(1L, 1L, 1L, new BigDecimal(taxableGross), "DOP"),
+                new AttendanceSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
         // ISR_TAXABLE_BASE = devengos gravables - TSS deducible; sin TSS registrado, queda igual al bruto gravable.
         context.recordEarning(new BigDecimal(taxableGross), true);
         return context;

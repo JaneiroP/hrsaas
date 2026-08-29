@@ -10,5 +10,5 @@
  */
 @org.springframework.modulith.ApplicationModule(
         displayName = "Personas",
-        allowedDependencies = {"platform :: access", "platform :: tenancy", "platform :: domain", "shared"})
+        allowedDependencies = {"platform :: access", "platform :: tenancy", "platform :: domain", "shared", "dataio :: api"})
 package com.ohmdevs.hrsaas.people;

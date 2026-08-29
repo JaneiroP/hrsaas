@@ -8,7 +8,5 @@ import java.util.List;
 
 public interface HolidayRepository extends JpaRepository<Holiday, Long> {
 
-    List<Holiday> findByHolidayCalendarId(Long holidayCalendarId);
-
     List<Holiday> findByHolidayCalendarIdAndDateBetween(Long holidayCalendarId, LocalDate from, LocalDate to);
 }
