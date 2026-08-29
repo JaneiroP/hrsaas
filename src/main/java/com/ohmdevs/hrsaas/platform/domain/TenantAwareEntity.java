@@ -12,7 +12,15 @@ import org.hibernate.annotations.TenantId;
  * {@code CurrentTenantIdentifierResolver}. No hay setter a propósito: el tenant
  * de una fila no se cambia, y una entidad tenant-aware nunca mapea una
  * asociación a {@code Tenant} porque ya lleva el id aquí.
+ *
+ * <p>{@code @NamedInterface} a nivel de clase, no de paquete: todo módulo de
+ * negocio (org, people, contracts, ...) necesita extender esta clase, pero
+ * el resto de {@code platform.domain} (Tenant, User, Role, Invitation, ...)
+ * sigue interno. Spring Modulith permite anotar un tipo suelto exactamente
+ * para este caso — abrir el paquete completo habría expuesto de paso las
+ * entidades propias de {@code platform} que ningún otro módulo debe importar.
  */
+@org.springframework.modulith.NamedInterface("domain")
 @MappedSuperclass
 public abstract class TenantAwareEntity {
 

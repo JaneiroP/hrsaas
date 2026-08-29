@@ -29,6 +29,10 @@
 	<properties>
 		<java.version>25</java.version>
 		<spring-modulith.version>2.1.0</spring-modulith.version>
+		<!-- Boot no gestiona el SDK de AWS: version verificada en vivo con
+		     `mvn dependency:get` (el indice de search.maven.org va atrasado para
+		     BOMs de alta frecuencia de release, mejor no fiarse a ciegas). -->
+		<aws-sdk.version>2.46.7</aws-sdk.version>
 	</properties>
 
 	<dependencyManagement>
@@ -38,6 +42,13 @@
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
 				<version>${spring-modulith.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>${aws-sdk.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -68,7 +79,18 @@
 			<artifactId>spring-modulith-starter-core</artifactId>
 		</dependency>
 
-		<!-- Migraciones versionadas: ddl-auto queda en 'validate'. -->
+		<!-- Migraciones versionadas: ddl-auto queda en 'validate'.
+		     Boot 4.0 partio la autoconfiguracion monolitica de spring-boot-autoconfigure
+		     en modulos por tecnologia: la de Flyway ahora vive en spring-boot-flyway y
+		     solo se registra si se declara spring-boot-starter-flyway (o ese modulo a
+		     mano). Tener flyway-core y flyway-database-postgresql en el classpath sin
+		     el starter compila sin error pero Flyway nunca corre: Hibernate arranca
+		     contra un esquema vacio y 'ddl-auto=validate' revienta con
+		     "missing table [...]" — asi se diagnostico este fallo (Pieza 0). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
@@ -78,6 +100,27 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
+		<!-- Verificado con `mvn dependency:get` contra el repo real, no contra el
+		     indice de search.maven.org (que va atrasado y dio falso negativo aqui):
+		     spring-boot-starter-batch:4.1.1 existe. Lo que SI falta en esta version
+		     es el autoconfig de JobRepository sobre JDBC (@BatchDataSource no existe
+		     en 4.1.1, aparece recien en 4.2.0-M1), asi que platform.batch define su
+		     propia subclase de DefaultBatchConfiguration en vez de depender de
+		     autoconfiguracion de Boot para el datasource de Batch. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-batch</artifactId>
+		</dependency>
+		<!-- Solo para las tablas internas de contabilidad de Spring Batch
+		     (BATCH_JOB_INSTANCE, etc.), en un datasource H2 en memoria dedicado y
+		     separado del datasource de Postgres con RLS. No contradice la regla
+		     "Postgres real, nunca H2" del resto de la suite: aqui nunca hay una fila
+		     de negocio ni de un tenant. -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -88,6 +131,19 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<!-- AD-07: historial de EmploymentContract/SalaryHistory. Version fijada
+		     por el BOM de spring-boot-starter-parent:4.1.1 (7.4.5.Final), igual que
+		     hibernate-core. Verificado con `mvn dependency:get`: el indice de
+		     search.maven.org tambien iba atrasado para este artefacto. -->
+		<dependency>
+			<groupId>org.hibernate.orm</groupId>
+			<artifactId>hibernate-envers</artifactId>
+		</dependency>
+		<!-- people.infrastructure.storage: documentos de empleado en S3/MinIO. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -134,6 +190,15 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Roundtrip real de S3DocumentStorageGateway. Verificado con
+		     `mvn dependency:get`: existe con este nombre en Testcontainers 2.x
+		     (el indice de busqueda mostraba el artefacto 1.x sin el prefijo
+		     'testcontainers-', iba atrasado para el renombrado de 2.x). -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-localstack</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

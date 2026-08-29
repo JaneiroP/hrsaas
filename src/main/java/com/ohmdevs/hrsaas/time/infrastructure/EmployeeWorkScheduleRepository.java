@@ -1,0 +1,15 @@
+package com.ohmdevs.hrsaas.time.infrastructure;
+
+import com.ohmdevs.hrsaas.time.domain.EmployeeWorkSchedule;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface EmployeeWorkScheduleRepository extends JpaRepository<EmployeeWorkSchedule, Long> {
+
+    List<EmployeeWorkSchedule> findByEmployeeId(Long employeeId);
+
+    /** El índice único parcial de la migración garantiza a lo sumo una vigente por empleado. */
+    Optional<EmployeeWorkSchedule> findByEmployeeIdAndEffectiveToIsNull(Long employeeId);
+}
