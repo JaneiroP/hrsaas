@@ -175,6 +175,17 @@
 			<artifactId>spring-modulith-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Invariantes de dinero (AD-05, blueprint SS11). Version mas reciente
+		     disponible; su propio pom declara junit-platform 1.13.1 (linea 5.13.x)
+		     mientras el proyecto resuelve JUnit Platform 6.0.3. Probado en vivo
+		     (MoneyPropertyTest, 1000 casos + 25 edge cases automaticos, verde):
+		     el motor de jqwik corre sin problema sobre la version mas nueva. -->
+		<dependency>
+			<groupId>net.jqwik</groupId>
+			<artifactId>jqwik</artifactId>
+			<version>1.9.3</version>
+			<scope>test</scope>
+		</dependency>
 
 		<!-- PostgreSQL real en tests: RLS y migraciones no se prueban con H2. -->
 		<dependency>

@@ -13,4 +13,6 @@ public interface EmploymentContractRepository extends JpaRepository<EmploymentCo
 
     /** El índice único parcial de la migración garantiza a lo sumo un resultado. */
     Optional<EmploymentContract> findByEmployeeIdAndStatusNot(Long employeeId, ContractStatus status);
+
+    List<EmploymentContract> findByCompanyIdAndStatus(Long companyId, ContractStatus status);
 }
