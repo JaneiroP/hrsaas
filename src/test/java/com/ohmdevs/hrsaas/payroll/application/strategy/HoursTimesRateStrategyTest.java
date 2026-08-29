@@ -43,7 +43,7 @@ class HoursTimesRateStrategyTest {
                 .thenReturn(Optional.of(new BigDecimal("195")));
 
         PayrollCalculationContext context = new PayrollCalculationContext(
-                new ActiveContractSummary(1L, 1L, 1L, new BigDecimal("39000.00"), "DOP"),
+                new ActiveContractSummary(1L, 1L, 1L, 1L, new BigDecimal("39000.00"), "DOP"),
                 new AttendanceSummary(BigDecimal.ZERO, new BigDecimal("4"), BigDecimal.ZERO));
 
         PayrollConcept concept = new PayrollConcept();

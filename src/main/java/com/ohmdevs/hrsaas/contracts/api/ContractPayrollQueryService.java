@@ -49,7 +49,7 @@ public class ContractPayrollQueryService {
             return null;
         }
         return new ActiveContractSummary(
-                contract.getId(), contract.getEmployeeId(), contract.getCompanyId(),
+                contract.getId(), contract.getEmployeeId(), contract.getCompanyId(), contract.getCostCenterId(),
                 openSalary.getAmount(), openSalary.getCurrency());
     }
 }

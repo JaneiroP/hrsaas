@@ -81,6 +81,7 @@ public class PayrollCalculationService {
         payslip.setPayrollRun(run);
         payslip.setEmployeeId(contract.employeeId());
         payslip.setContractId(contract.contractId());
+        payslip.setCostCenterId(contract.costCenterId());
         payslip.setCurrency(contract.currency());
         payslip.setGrossPay(BigDecimal.ZERO.setScale(Money.SCALE));
         payslip.setNetPay(BigDecimal.ZERO.setScale(Money.SCALE));

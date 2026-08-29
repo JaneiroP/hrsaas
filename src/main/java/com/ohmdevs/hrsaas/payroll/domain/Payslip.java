@@ -41,6 +41,10 @@ public class Payslip extends TenantAwareEntity {
     @Column(name = "contract_id", nullable = false, updatable = false)
     private Long contractId;
 
+    /** Centro de costo del contrato al momento del cálculo (blueprint §12 Fase 4: costo laboral por centro de costo) — capturado, no una referencia viva; nulo si el contrato no tiene uno asignado. */
+    @Column(name = "cost_center_id", updatable = false)
+    private Long costCenterId;
+
     @Column(name = "gross_pay", nullable = false, precision = 15, scale = 2)
     private BigDecimal grossPay;
 
