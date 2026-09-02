@@ -68,6 +68,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		<!-- Decision abierta #1 del blueprint (identidad propia vs Keycloak):
+		     se implementa lo que el plan asume, JWT propio emitido y validado
+		     dentro de la misma app, sin IdP externo. Trae spring-security-oauth2-jose
+		     (JwtEncoder/JwtDecoder de Nimbus) como transitiva de este starter, ya
+		     que Boot no separa "emitir" de "validar" en dos artefactos distintos.
+		     Verificado con `mvn dependency:get` contra el repo real: existe en
+		     4.1.1 (coincide con el resto del BOM de spring-boot-starter-parent). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
@@ -181,6 +192,19 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- TestRestTemplate para pruebas HTTP de extremo a extremo (login + portal
+		     sobre puerto aleatorio real). Boot separo la autoconfiguracion por
+		     tecnologia (mismo patron que flyway/batch, ver comentarios arriba):
+		     en 3.x TestRestTemplate vivia en spring-boot-test
+		     (org.springframework.boot.test.web.client), spring-boot-starter-test
+		     ya no lo trae en 4.1.1. Ahora es org.springframework.boot.resttestclient.TestRestTemplate
+		     en este artefacto aparte, verificado con `mvn dependency:get` contra
+		     el repo real (el indice de busqueda no distinguia la version). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-resttestclient</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- Invariantes de dinero (AD-05, blueprint SS11). Version mas reciente

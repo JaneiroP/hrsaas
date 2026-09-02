@@ -1,8 +1,7 @@
 package com.ohmdevs.hrsaas.time.api;
 
+import com.ohmdevs.hrsaas.time.application.HolidayCalendarLookup;
 import com.ohmdevs.hrsaas.time.domain.EmployeeWorkSchedule;
-import com.ohmdevs.hrsaas.time.domain.Holiday;
-import com.ohmdevs.hrsaas.time.domain.HolidayCalendar;
 import com.ohmdevs.hrsaas.time.domain.LeaveRequest;
 import com.ohmdevs.hrsaas.time.domain.LeaveRequestStatus;
 import com.ohmdevs.hrsaas.time.domain.TimeEntry;
@@ -28,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Único contenido público de {@code time}: lo que {@code payroll} (Fase 3)
@@ -75,7 +73,8 @@ public class TimeAndAttendanceSummaryService {
                 .map(EmployeeWorkSchedule::getWorkSchedule)
                 .orElse(null);
 
-        Set<LocalDate> holidays = companyWideHolidays(companyId, periodStart, periodEnd);
+        Set<LocalDate> holidays = HolidayCalendarLookup.companyWideHolidays(
+                holidayCalendarRepository, holidayRepository, companyId, periodStart, periodEnd);
 
         BigDecimal scheduledDays = BigDecimal.ZERO;
         if (schedule != null) {
@@ -97,18 +96,6 @@ public class TimeAndAttendanceSummaryService {
         BigDecimal overtimeHours = computeOvertimeHours(employeeId, schedule, periodStart, periodEnd);
 
         return new AttendanceSummary(effectiveDays, overtimeHours, unpaidLeaveDays);
-    }
-
-    private Set<LocalDate> companyWideHolidays(Long companyId, LocalDate periodStart, LocalDate periodEnd) {
-        return holidayCalendarRepository.findByCompanyId(companyId).stream()
-                .filter(calendar -> calendar.getLocationId() == null)
-                .findFirst()
-                .map(HolidayCalendar::getId)
-                .map(calendarId -> holidayRepository.findByHolidayCalendarIdAndDateBetween(calendarId, periodStart, periodEnd))
-                .orElseGet(List::of)
-                .stream()
-                .map(Holiday::getDate)
-                .collect(Collectors.toSet());
     }
 
     private boolean overlaps(LeaveRequest request, LocalDate periodStart, LocalDate periodEnd) {

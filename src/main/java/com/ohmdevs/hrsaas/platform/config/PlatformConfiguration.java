@@ -8,10 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Piezas del módulo que no son dominio.
  *
- * <p>Aquí <em>no</em> se configura la seguridad HTTP: mientras no esté decidido
- * si la identidad la emite la propia aplicación o un proveedor externo, la
- * autoconfiguración de Spring Security deja todo cerrado, que es el valor por
- * defecto correcto. Los endpoints llegan con esa decisión, no antes.
+ * <p>La seguridad HTTP (JWT propio, decisión abierta §14.1 del blueprint)
+ * vive en {@link SecurityConfiguration}, no aquí: se separó para que esta
+ * clase siga siendo "lo que no encaja en otro sitio" y no una configuración
+ * de seguridad con cosas colgadas.
  */
 @Configuration(proxyBeanMethods = false)
 public class PlatformConfiguration {

@@ -2,6 +2,7 @@ package com.ohmdevs.hrsaas.time.application;
 
 import com.ohmdevs.hrsaas.platform.tenancy.TenantContext;
 import com.ohmdevs.hrsaas.shared.statemachine.IllegalStateTransitionException;
+import com.ohmdevs.hrsaas.time.api.InsufficientLeaveBalanceException;
 import com.ohmdevs.hrsaas.time.domain.LeaveBalance;
 import com.ohmdevs.hrsaas.time.domain.LeaveRequest;
 import com.ohmdevs.hrsaas.time.domain.LeaveRequestStatus;
@@ -78,7 +79,7 @@ public class LeaveManagementService {
         if (leaveType.getAccrualDaysPerYear() != null) {
             LeaveBalance balance = findOrCreateBalance(employeeId, leaveTypeId);
             if (balance.getAvailableDays().compareTo(days) < 0) {
-                throw new IllegalArgumentException(
+                throw new InsufficientLeaveBalanceException(
                         "El empleado no tiene saldo suficiente de '%s': disponible %s, solicitado %s"
                                 .formatted(leaveType.getName(), balance.getAvailableDays(), days));
             }
