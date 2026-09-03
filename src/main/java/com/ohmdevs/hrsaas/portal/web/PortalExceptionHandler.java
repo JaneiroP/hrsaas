@@ -34,7 +34,12 @@ public class PortalExceptionHandler {
 
     @ExceptionHandler(InvalidLeaveRangeException.class)
     public ProblemDetail handleInvalidRange(InvalidLeaveRangeException ex) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Rango de fechas inválido", ex.getMessage());
+        // UNPROCESSABLE_CONTENT, no UNPROCESSABLE_ENTITY: Spring Framework 7
+        // renombro la constante (RFC 9110 renombro la frase de motivo de 422
+        // a "Unprocessable Content"); UNPROCESSABLE_ENTITY quedo deprecada.
+        // Mismo codigo 422 en ambos casos -- error real descubierto corriendo
+        // PortalApiIntegrationTest con Docker disponible por primera vez.
+        return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Rango de fechas inválido", ex.getMessage());
     }
 
     @ExceptionHandler(InsufficientLeaveBalanceException.class)

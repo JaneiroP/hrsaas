@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -29,6 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * bastar, pero se prueba igual: es la última red, no la única).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Boot 4.1.1 dejó de autoconfigurar TestRestTemplate solo por RANDOM_PORT
+// (cambio real, no un olvido de la Fase 5 anterior: sin Docker no había
+// forma de descubrirlo, porque el test ni siquiera llegaba a arrancar el
+// contexto). Sin esta anotación, @Autowired de TestRestTemplate falla con
+// NoSuchBeanDefinitionException aunque spring-boot-resttestclient esté en
+// el classpath (verificado inspeccionando el jar: TestRestTemplateTestAutoConfiguration
+// solo se importa vía este import-selector, no vía el AutoConfiguration.imports general).
+@AutoConfigureTestRestTemplate
 class PortalIsolationTest extends AbstractPostgresTest {
 
     @LocalServerPort

@@ -207,6 +207,20 @@
 			<artifactId>spring-boot-resttestclient</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- spring-boot-resttestclient no arrastra RestTemplateBuilder consigo
+		     (bug real, no un descuido de este proyecto: issue #48588 de
+		     spring-projects/spring-boot, "doesn't pull in restclient
+		     dependency", abierto contra 4.0.1 y sigue afectando 4.1.1).
+		     Sin esto, @AutoConfigureTestRestTemplate falla al arrancar el
+		     contexto con NoClassDefFoundError sobre
+		     org.springframework.boot.restclient.RestTemplateBuilder: error
+		     real encontrado corriendo PortalApiIntegrationTest/PortalIsolationTest
+		     con Docker disponible por primera vez, no adivinado. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-restclient</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- Invariantes de dinero (AD-05, blueprint SS11). Version mas reciente
 		     disponible; su propio pom declara junit-platform 1.13.1 (linea 5.13.x)
 		     mientras el proyecto resuelve JUnit Platform 6.0.3. Probado en vivo

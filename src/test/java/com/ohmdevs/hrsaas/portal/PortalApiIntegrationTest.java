@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -32,6 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * encajan juntos, no solo cada uno por separado.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Ver el mismo comentario en PortalIsolationTest: Boot 4.1.1 exige esta
+// anotación explícita para autoconfigurar TestRestTemplate, ya no basta con
+// RANDOM_PORT como en Boot 3.x.
+@AutoConfigureTestRestTemplate
 class PortalApiIntegrationTest extends AbstractPostgresTest {
 
     @LocalServerPort
@@ -196,7 +201,8 @@ class PortalApiIntegrationTest extends AbstractPostgresTest {
                 api("/me/leave-requests"),
                 new HttpEntity<>(new NewLeaveRequestDto("VACACIONES", "2026-11-06", "2026-11-02", null), bearer(token).getHeaders()),
                 String.class);
-        assertThat(invalidRange.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        // UNPROCESSABLE_CONTENT: ver comentario en PortalExceptionHandler sobre el renombre de Spring Framework 7.
+        assertThat(invalidRange.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
 
         // GET /me/leave-requests: la recién creada aparece primero (orden por id DESC).
         ResponseEntity<LeaveRequestPageDto> requests = restTemplate.exchange(
