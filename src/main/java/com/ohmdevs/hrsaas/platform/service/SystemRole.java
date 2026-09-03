@@ -32,6 +32,14 @@ public enum SystemRole {
      * que nadie marca.
      */
     HR_MANAGER("Gerente de RRHH", "Administra personal y ejecuta nómina", false, Map.ofEntries(
+            // company:read/manage solo admiten ALL en el catálogo (V3): no hay
+            // un alcance COMPANY intermedio con sentido para administrar la
+            // propia lista de razones sociales — ver Javadoc de
+            // org.web.OrgAdminController. Sin esto, HR_MANAGER no podía ver
+            // ni armar la estructura (departamentos, cargos, centros de
+            // costo) que después necesita para contratar a alguien.
+            entry("company:read", PermissionScope.ALL),
+            entry("company:manage", PermissionScope.ALL),
             entry("employee:read", PermissionScope.COMPANY),
             entry("employee:manage", PermissionScope.COMPANY),
             entry("contract:read", PermissionScope.COMPANY),
