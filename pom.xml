@@ -33,6 +33,12 @@
 		     `mvn dependency:get` (el indice de search.maven.org va atrasado para
 		     BOMs de alta frecuencia de release, mejor no fiarse a ciegas). -->
 		<aws-sdk.version>2.46.7</aws-sdk.version>
+		<!-- Boot tampoco gestiona springdoc (no es parte de su BOM, como
+		     Modulith): 3.1.0 es la primera serie mayor de springdoc que declara
+		     soporte para Spring Boot 4 / Spring Framework 7 (versionado en
+		     lockstep con el major de Boot). Verificado con `mvn dependency:get`
+		     contra el repo real. -->
+		<springdoc.version>3.1.0</springdoc.version>
 	</properties>
 
 	<dependencyManagement>
@@ -82,6 +88,17 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!-- OpenAPI publicado y entregado al equipo de frontend (blueprint §12
+		     Fase 5, §08 "contratos de la API"): -ui trae Swagger UI en
+		     /swagger-ui.html además del documento crudo en /v3/api-docs, útil
+		     para que el equipo de frontend explore la API sin herramientas
+		     aparte mientras no exista un cliente generado. -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 
 		<!-- Fronteras de módulo verificadas en el build (AD-01). -->
