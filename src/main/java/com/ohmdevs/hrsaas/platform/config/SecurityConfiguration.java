@@ -3,6 +3,7 @@ package com.ohmdevs.hrsaas.platform.config;
 import com.ohmdevs.hrsaas.platform.security.ActorJwtAuthenticationConverter;
 import com.ohmdevs.hrsaas.platform.service.ActorLoader;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -13,9 +14,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -34,10 +39,12 @@ import java.util.UUID;
 public class SecurityConfiguration {
 
     @Bean
-    SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ActorLoader actorLoader, ObjectMapper objectMapper)
+    SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, ActorLoader actorLoader, ObjectMapper objectMapper,
+                                                CorsConfigurationSource corsConfigurationSource)
             throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // API sin estado, autenticada por bearer token: no hay cookie de sesión que proteger de CSRF.
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
@@ -47,6 +54,38 @@ public class SecurityConfiguration {
                         .authenticationEntryPoint(problemAuthenticationEntryPoint(objectMapper))
                         .accessDeniedHandler(problemAccessDeniedHandler(objectMapper)));
         return http.build();
+    }
+
+    /**
+     * Habilita al frontend (Angular, otro origen/puerto en desarrollo —
+     * {@code ng serve} en 4200 contra este backend en 8080) a llamar la API
+     * desde el navegador. Sin esto, el token del bearer llega bien por
+     * Postman/curl pero el navegador bloquea la respuesta antes de que el
+     * código JavaScript la vea: el mismo backend "funciona" en una prueba
+     * manual y falla en la app real, una discrepancia que cuesta tiempo
+     * diagnosticar si no se sabe que CORS nunca se configuró.
+     *
+     * <p>{@code allowCredentials(true)} + orígenes explícitos (nunca
+     * {@code "*"}) porque el navegador rechaza la combinación de comodín con
+     * credenciales — y aquí "credenciales" incluye la cabecera
+     * {@code Authorization} con el bearer token, no solo cookies. La lista de
+     * orígenes es configurable por entorno ({@code hrsaas.cors.allowed-origins},
+     * coma-separado) porque el dominio real de producción del frontend no se
+     * conoce todavía — pendiente de ajustar cuando exista.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${hrsaas.cors.allowed-origins:http://localhost:4200}") List<String> allowedOrigins) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/v1/**", configuration);
+        return source;
     }
 
     /**
