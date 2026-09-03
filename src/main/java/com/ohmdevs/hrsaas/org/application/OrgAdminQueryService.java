@@ -104,6 +104,25 @@ public class OrgAdminQueryService {
     }
 
     @Transactional
+    public Location getLocation(Long locationId) {
+        return locationRepository.findById(locationId)
+                .orElseThrow(() -> new NoSuchElementException("Sucursal " + locationId + " no encontrada"));
+    }
+
+    /** {@code findByIdFetchDepartment} y no {@code findById}: ver Javadoc de {@code PositionRepository}. */
+    @Transactional
+    public Position getPosition(Long positionId) {
+        return positionRepository.findByIdFetchDepartment(positionId)
+                .orElseThrow(() -> new NoSuchElementException("Cargo " + positionId + " no encontrado"));
+    }
+
+    @Transactional
+    public CostCenter getCostCenter(Long costCenterId) {
+        return costCenterRepository.findById(costCenterId)
+                .orElseThrow(() -> new NoSuchElementException("Centro de costo " + costCenterId + " no encontrado"));
+    }
+
+    @Transactional
     public PayGrade getPayGrade(Long payGradeId) {
         return payGradeRepository.findById(payGradeId)
                 .orElseThrow(() -> new NoSuchElementException("Banda salarial " + payGradeId + " no encontrada"));

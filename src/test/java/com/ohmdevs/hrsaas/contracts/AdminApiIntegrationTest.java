@@ -55,6 +55,16 @@ class AdminApiIntegrationTest extends AbstractPostgresTest {
     private record DepartmentDto(Long id, Long companyId, String name, boolean active) {
     }
 
+    private record LocationDto(Long id, Long companyId, String name, String address, boolean active) {
+    }
+
+    private record CostCenterDto(Long id, Long companyId, String code, String name, boolean active) {
+    }
+
+    private record PayGradeDto(Long id, Long companyId, String code, String name,
+                                BigDecimal minSalary, BigDecimal maxSalary, String currency, boolean active) {
+    }
+
     private record PositionDto(Long id, Long companyId, Long departmentId, String departmentName,
                                 String title, Long payGradeId, boolean active) {
     }
@@ -130,18 +140,37 @@ class AdminApiIntegrationTest extends AbstractPostgresTest {
         assertThat(companies.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(List.of(companies.getBody())).extracting(CompanyDto::id).contains(companyId);
 
+        ResponseEntity<CompanyDto> companyRenamed = restTemplate.exchange(
+                api("/org/companies/" + companyId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("legalName", "Constructora Alfa, SRL", "tradeName", "Alfa Corp", "active", true)),
+                CompanyDto.class);
+        assertThat(companyRenamed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(companyRenamed.getBody().tradeName()).isEqualTo("Alfa Corp");
+
         ResponseEntity<DepartmentDto> department = restTemplate.exchange(
                 api("/org/companies/" + companyId + "/departments"), HttpMethod.POST,
                 bearerWithBody(token, Map.of("name", "Operaciones")), DepartmentDto.class);
         assertThat(department.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         Long departmentId = department.getBody().id();
 
+        ResponseEntity<DepartmentDto> departmentRenamed = restTemplate.exchange(
+                api("/org/companies/" + companyId + "/departments/" + departmentId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Operaciones y Logistica", "active", true)), DepartmentDto.class);
+        assertThat(departmentRenamed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(departmentRenamed.getBody().name()).isEqualTo("Operaciones y Logistica");
+
         ResponseEntity<PositionDto> position = restTemplate.exchange(
                 api("/org/companies/" + companyId + "/positions"), HttpMethod.POST,
                 bearerWithBody(token, Map.of("departmentId", departmentId, "title", "Analista de Compras")), PositionDto.class);
         assertThat(position.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         Long positionId = position.getBody().id();
-        assertThat(position.getBody().departmentName()).isEqualTo("Operaciones");
+        assertThat(position.getBody().departmentName()).isEqualTo("Operaciones y Logistica");
+
+        ResponseEntity<PositionDto> positionRenamed = restTemplate.exchange(
+                api("/org/companies/" + companyId + "/positions/" + positionId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("title", "Analista Senior de Compras", "active", true)), PositionDto.class);
+        assertThat(positionRenamed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(positionRenamed.getBody().title()).isEqualTo("Analista Senior de Compras");
 
         ResponseEntity<PositionDto> managerPosition = restTemplate.exchange(
                 api("/org/companies/" + companyId + "/positions"), HttpMethod.POST,
@@ -185,8 +214,8 @@ class AdminApiIntegrationTest extends AbstractPostgresTest {
         assertThat(hired.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         Long contractId = hired.getBody().id();
         assertThat(hired.getBody().employeeName()).isEqualTo("Alberto Reyes");
-        assertThat(hired.getBody().companyName()).isEqualTo("Alfa");
-        assertThat(hired.getBody().positionTitle()).isEqualTo("Analista de Compras");
+        assertThat(hired.getBody().companyName()).isEqualTo("Alfa Corp");
+        assertThat(hired.getBody().positionTitle()).isEqualTo("Analista Senior de Compras");
         assertThat(hired.getBody().currentSalary()).isEqualByComparingTo("50000.00");
         assertThat(hired.getBody().status()).isEqualTo("ACTIVE");
 
@@ -257,6 +286,84 @@ class AdminApiIntegrationTest extends AbstractPostgresTest {
         ResponseEntity<EmployeePageDto> inactiveEmployees = restTemplate.exchange(
                 api("/employees?status=INACTIVE"), HttpMethod.GET, bearer(token), EmployeePageDto.class);
         assertThat(inactiveEmployees.getBody().items()).extracting(EmployeeDto::id).contains(employeeId);
+    }
+
+    @Test
+    @DisplayName("sucursales, centros de costo y bandas salariales: alta y edicion, y el guardia de pertenencia rechaza ids de otra empresa")
+    void orgSubResourcesCreateUpdateAndOwnershipGuard() {
+        AdminTestFixture.Provisioned hr = fixture.provisionHrManager("faro-org-sub");
+        String token = login(hr.email(), hr.password());
+
+        ResponseEntity<CompanyDto> companyA = restTemplate.exchange(api("/org/companies"), HttpMethod.POST,
+                bearerWithBody(token, Map.of("legalName", "Alfa Uno, SRL", "tradeName", "Alfa Uno", "rnc", "101111111")),
+                CompanyDto.class);
+        Long companyAId = companyA.getBody().id();
+
+        ResponseEntity<CompanyDto> companyB = restTemplate.exchange(api("/org/companies"), HttpMethod.POST,
+                bearerWithBody(token, Map.of("legalName", "Alfa Dos, SRL", "tradeName", "Alfa Dos", "rnc", "102222222")),
+                CompanyDto.class);
+        Long companyBId = companyB.getBody().id();
+
+        // --- sucursal: alta y edicion ---------------------------------------------------
+        ResponseEntity<LocationDto> location = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/locations"), HttpMethod.POST,
+                bearerWithBody(token, Map.of("name", "Sede Central", "address", "Av. Winston Churchill")), LocationDto.class);
+        assertThat(location.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Long locationId = location.getBody().id();
+
+        ResponseEntity<LocationDto> locationUpdated = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/locations/" + locationId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Sede Central Renovada", "address", "Av. Winston Churchill 100", "active", true)),
+                LocationDto.class);
+        assertThat(locationUpdated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(locationUpdated.getBody().name()).isEqualTo("Sede Central Renovada");
+
+        ResponseEntity<LocationDto[]> locations = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/locations"), HttpMethod.GET, bearer(token), LocationDto[].class);
+        assertThat(List.of(locations.getBody())).extracting(LocationDto::id).containsExactly(locationId);
+
+        // --- centro de costo: alta, edicion y desactivacion ------------------------------
+        ResponseEntity<CostCenterDto> costCenter = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/cost-centers"), HttpMethod.POST,
+                bearerWithBody(token, Map.of("code", "CC-01", "name", "Adquisiciones")), CostCenterDto.class);
+        assertThat(costCenter.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Long costCenterId = costCenter.getBody().id();
+
+        ResponseEntity<CostCenterDto> costCenterDeactivated = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/cost-centers/" + costCenterId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Adquisiciones", "active", false)), CostCenterDto.class);
+        assertThat(costCenterDeactivated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(costCenterDeactivated.getBody().active()).isFalse();
+
+        // --- banda salarial: alta, edicion, y rango invertido rechazado ------------------
+        ResponseEntity<PayGradeDto> payGrade = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/pay-grades"), HttpMethod.POST,
+                bearerWithBody(token, Map.of("code", "PG-01", "name", "Analista",
+                        "minSalary", new BigDecimal("30000.00"), "maxSalary", new BigDecimal("45000.00"))),
+                PayGradeDto.class);
+        assertThat(payGrade.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Long payGradeId = payGrade.getBody().id();
+
+        ResponseEntity<PayGradeDto> payGradeUpdated = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/pay-grades/" + payGradeId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Analista Senior",
+                        "minSalary", new BigDecimal("35000.00"), "maxSalary", new BigDecimal("50000.00"), "active", true)),
+                PayGradeDto.class);
+        assertThat(payGradeUpdated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(payGradeUpdated.getBody().minSalary()).isEqualByComparingTo("35000.00");
+
+        ResponseEntity<String> payGradeInvertedRange = restTemplate.exchange(
+                api("/org/companies/" + companyAId + "/pay-grades/" + payGradeId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Analista Senior",
+                        "minSalary", new BigDecimal("60000.00"), "maxSalary", new BigDecimal("50000.00"), "active", true)),
+                String.class);
+        assertThat(payGradeInvertedRange.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        // --- guardia de pertenencia: un id de la empresa A no se puede editar bajo la empresa B ---
+        ResponseEntity<String> crossCompanyPatch = restTemplate.exchange(
+                api("/org/companies/" + companyBId + "/locations/" + locationId), HttpMethod.PATCH,
+                bearerWithBody(token, Map.of("name", "Intento ajeno", "address", "N/A", "active", true)), String.class);
+        assertThat(crossCompanyPatch.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test

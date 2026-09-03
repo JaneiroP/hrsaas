@@ -13,6 +13,7 @@ import com.ohmdevs.hrsaas.platform.access.PermissionScope;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,12 +34,11 @@ import java.util.List;
  * lista <strong>es</strong> el conjunto de empresas, así que el alcance mínimo
  * exigible es el tenant completo.
  *
- * <p>Sin endpoints de edición/baja para ninguna entidad de {@code org} en esta
- * primera pasada (solo alta y consulta) — {@code OrgStructureService} tampoco
- * los tiene todavía. Editar o desactivar una empresa/departamento/cargo queda
- * pendiente para una iteración futura; hoy un error de captura se corrige
- * dando de baja el registro a mano en base de datos o, más razonable,
- * ampliando {@code OrgStructureService} cuando el negocio lo pida.
+ * <p>{@code PATCH} edita nombre/campos mutables y el flag {@code active} de
+ * cada entidad, nunca su clave de negocio ({@code rnc}, {@code code}) — ver
+ * Javadoc de {@code OrgStructureService}. No hay {@code DELETE}: "de baja" es
+ * {@code active=false}, nunca borrado físico — otros módulos (contratos,
+ * nómina) referencian estas filas por id y borrarlas rompería su histórico.
  */
 @RestController
 @RequestMapping("/api/v1/org")
@@ -75,6 +75,13 @@ public class OrgAdminController {
         return toResponse(company);
     }
 
+    @PatchMapping("/companies/{companyId}")
+    public CompanyResponse updateCompany(@PathVariable Long companyId, @Valid @RequestBody CompanyUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        Company company = queries.getCompany(companyId);
+        return toResponse(orgStructureService.updateCompany(company, request.legalName(), request.tradeName(), request.active()));
+    }
+
     @GetMapping("/companies/{companyId}/departments")
     public List<DepartmentResponse> listDepartments(@PathVariable Long companyId) {
         accessGuard.require("company:read", PermissionScope.ALL);
@@ -89,6 +96,15 @@ public class OrgAdminController {
         return toResponse(orgStructureService.createDepartment(company, request.name()));
     }
 
+    @PatchMapping("/companies/{companyId}/departments/{id}")
+    public DepartmentResponse updateDepartment(@PathVariable Long companyId, @PathVariable Long id,
+                                                @Valid @RequestBody DepartmentUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        Department department = requireOwnedByCompany(queries.getDepartment(id), companyId,
+                "El departamento " + id + " no pertenece a la empresa " + companyId);
+        return toResponse(orgStructureService.updateDepartment(department, request.name(), request.active()));
+    }
+
     @GetMapping("/companies/{companyId}/locations")
     public List<LocationResponse> listLocations(@PathVariable Long companyId) {
         accessGuard.require("company:read", PermissionScope.ALL);
@@ -101,6 +117,15 @@ public class OrgAdminController {
         accessGuard.require("company:manage", PermissionScope.ALL);
         Company company = queries.getCompany(companyId);
         return toResponse(orgStructureService.createLocation(company, request.name(), request.address()));
+    }
+
+    @PatchMapping("/companies/{companyId}/locations/{id}")
+    public LocationResponse updateLocation(@PathVariable Long companyId, @PathVariable Long id,
+                                            @Valid @RequestBody LocationUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        Location location = requireOwnedByCompany(queries.getLocation(id), companyId,
+                "La sucursal " + id + " no pertenece a la empresa " + companyId);
+        return toResponse(orgStructureService.updateLocation(location, request.name(), request.address(), request.active()));
     }
 
     @GetMapping("/companies/{companyId}/positions")
@@ -122,6 +147,18 @@ public class OrgAdminController {
         return toResponse(orgStructureService.createPosition(company, department, request.title(), payGrade));
     }
 
+    @PatchMapping("/companies/{companyId}/positions/{id}")
+    public PositionResponse updatePosition(@PathVariable Long companyId, @PathVariable Long id,
+                                            @Valid @RequestBody PositionUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        Position position = requireOwnedByCompany(queries.getPosition(id), companyId,
+                "El cargo " + id + " no pertenece a la empresa " + companyId);
+        PayGrade payGrade = request.payGradeId() == null ? null : requireOwnedByCompany(
+                queries.getPayGrade(request.payGradeId()), companyId,
+                "La banda salarial " + request.payGradeId() + " no pertenece a la empresa " + companyId);
+        return toResponse(orgStructureService.updatePosition(position, request.title(), payGrade, request.active()));
+    }
+
     @GetMapping("/companies/{companyId}/cost-centers")
     public List<CostCenterResponse> listCostCenters(@PathVariable Long companyId) {
         accessGuard.require("company:read", PermissionScope.ALL);
@@ -134,6 +171,15 @@ public class OrgAdminController {
         accessGuard.require("company:manage", PermissionScope.ALL);
         Company company = queries.getCompany(companyId);
         return toResponse(orgStructureService.createCostCenter(company, request.code(), request.name()));
+    }
+
+    @PatchMapping("/companies/{companyId}/cost-centers/{id}")
+    public CostCenterResponse updateCostCenter(@PathVariable Long companyId, @PathVariable Long id,
+                                                @Valid @RequestBody CostCenterUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        CostCenter costCenter = requireOwnedByCompany(queries.getCostCenter(id), companyId,
+                "El centro de costo " + id + " no pertenece a la empresa " + companyId);
+        return toResponse(orgStructureService.updateCostCenter(costCenter, request.name(), request.active()));
     }
 
     @GetMapping("/companies/{companyId}/pay-grades")
@@ -151,10 +197,23 @@ public class OrgAdminController {
                 company, request.code(), request.name(), request.minSalary(), request.maxSalary()));
     }
 
-    /** {@code department}/{@code payGrade} llegan por id suelto en el cuerpo: nada impide que apunten a otra empresa del mismo tenant sin esta comprobación explícita. */
+    @PatchMapping("/companies/{companyId}/pay-grades/{id}")
+    public PayGradeResponse updatePayGrade(@PathVariable Long companyId, @PathVariable Long id,
+                                            @Valid @RequestBody PayGradeUpdateRequest request) {
+        accessGuard.require("company:manage", PermissionScope.ALL);
+        PayGrade payGrade = requireOwnedByCompany(queries.getPayGrade(id), companyId,
+                "La banda salarial " + id + " no pertenece a la empresa " + companyId);
+        return toResponse(orgStructureService.updatePayGrade(
+                payGrade, request.name(), request.minSalary(), request.maxSalary(), request.active()));
+    }
+
+    /** IDs sueltos en el cuerpo o en la URL: nada impide que apunten a otra empresa del mismo tenant sin esta comprobación explícita. */
     private static <T> T requireOwnedByCompany(T entity, Long companyId, String message) {
         Long ownerCompanyId = switch (entity) {
             case Department d -> d.getCompany().getId();
+            case Location l -> l.getCompany().getId();
+            case Position p -> p.getCompany().getId();
+            case CostCenter c -> c.getCompany().getId();
             case PayGrade p -> p.getCompany().getId();
             default -> throw new IllegalStateException("Tipo no soportado: " + entity.getClass());
         };
