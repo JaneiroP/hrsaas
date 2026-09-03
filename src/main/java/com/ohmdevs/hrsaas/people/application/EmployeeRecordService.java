@@ -82,6 +82,26 @@ public class EmployeeRecordService {
         return employeeRepository.save(employee);
     }
 
+    /**
+     * Edita datos de contacto/identidad básicos de un expediente ya existente
+     * ({@code people.web.EmployeeAdminController}). Deliberadamente no toca
+     * {@code documentType}/{@code documentNumber}/{@code birthDate}: cambiar
+     * el documento exige recalcular el índice ciego y repetir la comprobación
+     * de duplicado que hace {@link #createEmployee}, y cambiar la fecha de
+     * nacimiento de un expediente ya en uso es una corrección excepcional,
+     * no una edición de rutina — ambas quedan pendientes de un flujo propio
+     * de "corrección de expediente" si el negocio lo pide.
+     */
+    @Transactional
+    public Employee updateEmployee(Employee employee, String firstName, String lastName, String email, String phone) {
+        TenantContext.require();
+        employee.setFirstName(firstName);
+        employee.setLastName(lastName);
+        employee.setEmail(email);
+        employee.setPhone(phone);
+        return employeeRepository.save(employee);
+    }
+
     @Transactional
     public Dependent addDependent(Employee employee, String fullName,
                                    DependentRelationship relationship, LocalDate birthDate) {
