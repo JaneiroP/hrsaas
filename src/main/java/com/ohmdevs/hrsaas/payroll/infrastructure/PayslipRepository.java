@@ -23,4 +23,13 @@ public interface PayslipRepository extends JpaRepository<Payslip, Long> {
      * empleado a quien le cambie el id en la URL (blueprint §09).
      */
     Optional<Payslip> findByIdAndEmployeeId(Long id, Long employeeId);
+
+    /**
+     * Mismo motivo que {@link #findByIdAndEmployeeId}, para la API admin
+     * ({@code GET .../runs/{runId}/payslips/{payslipId}}): filtra por
+     * {@code payrollRunId} en la consulta en vez de cargar por id y comparar
+     * después, y de paso evita tocar la asociación perezosa {@code payrollRun}
+     * (no hace falta inicializarla solo para comprobar a qué corrida pertenece).
+     */
+    Optional<Payslip> findByIdAndPayrollRunId(Long id, Long payrollRunId);
 }

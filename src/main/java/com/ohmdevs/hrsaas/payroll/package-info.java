@@ -15,11 +15,17 @@
  * volantes en 3 minutos), el PDF del volante archivado en S3, y el juego
  * completo de golden files acordados con un contador dominicano — **no
  * están implementados en esta pasada**, quedan señalados como pendientes.
+ *
+ * <p>Depende de {@code platform :: access} desde la API administrativa
+ * ({@code payroll.web.PayrollAdminController}): antes de eso, {@code payroll}
+ * solo se consumía desde otros módulos ({@code payroll.api}) o desde tests, y
+ * no necesitaba comprobar permisos por sí mismo — mismo motivo documentado en
+ * {@code org.package-info}/{@code contracts.package-info}.
  */
 @org.springframework.modulith.ApplicationModule(
         displayName = "Nómina",
         allowedDependencies = {
-                "platform :: tenancy", "platform :: domain", "shared",
+                "platform :: access", "platform :: tenancy", "platform :: domain", "shared",
                 "taxconfig :: api", "taxconfig :: domain",
                 "time :: api", "loans :: api", "contracts :: api"
         })
