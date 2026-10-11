@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -53,6 +54,11 @@ public class SecurityConfiguration {
                         // frontend consulta antes de tener credenciales propias.
                         // No expone datos de negocio, solo la forma de la API.
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Webhooks entrantes: los llama otro sistema, que no tiene
+                        // usuario ni token. No quedan abiertos: cada petición se
+                        // autentica por su firma HMAC dentro del controlador
+                        // (ver integrations.web.AttendanceWebhookController).
+                        .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new ActorJwtAuthenticationConverter(actorLoader)))
